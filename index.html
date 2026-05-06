@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Medical Vocabulary Revision App</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #65708a;
+      --border: #e3e7ef;
+      --accent: #2457c5;
+      --accent-dark: #1d469e;
+      --good: #137333;
+      --shadow: 0 14px 35px rgba(15, 23, 42, 0.10);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+      background: radial-gradient(circle at top, #eef4ff 0, var(--bg) 42%, #f8f8fb 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 40px; }
+    header { text-align: center; margin: 8px 0 20px; }
+    h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); margin: 8px 0 6px; letter-spacing: -0.03em; }
+    .subtitle { color: var(--muted); margin: 0; line-height: 1.5; }
+    .toolbar {
+      background: rgba(255,255,255,.78);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin: 18px 0;
+      backdrop-filter: blur(8px);
+    }
+    input, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 13px;
+      font-size: 1rem;
+      background: #fff;
+      color: var(--text);
+    }
+    .stats { text-align: right; color: var(--muted); font-size: .95rem; white-space: nowrap; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(22px, 5vw, 42px);
+      min-height: 360px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .category { color: var(--accent); font-weight: 700; font-size: .95rem; margin-bottom: 18px; }
+    .label { color: var(--muted); font-size: .9rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+    .english { font-size: clamp(2rem, 7vw, 4rem); font-weight: 800; letter-spacing: -0.04em; margin: 12px 0 18px; line-height: 1.08; }
+    .chineseBox {
+      display: none;
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+      padding-top: 22px;
+    }
+    .chinese { font-size: clamp(1.55rem, 5vw, 3rem); font-weight: 750; line-height: 1.25; margin-top: 10px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    button {
+      border: 0;
+      border-radius: 13px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: #eef2f8;
+      color: var(--text);
+      min-height: 46px;
+    }
+    button.primary { background: var(--accent); color: white; flex: 1 1 180px; }
+    button.primary:hover { background: var(--accent-dark); }
+    button.good { background: #e8f5eb; color: var(--good); }
+    button:active { transform: translateY(1px); }
+    .progressOuter { height: 9px; background: #e9edf5; border-radius: 99px; overflow: hidden; margin: 16px 0 0; }
+    .progressInner { height: 100%; width: 0%; background: var(--accent); border-radius: 99px; transition: width .2s ease; }
+    .small { color: var(--muted); font-size: .9rem; margin-top: 14px; line-height: 1.45; }
+    .empty { display: none; text-align: center; padding: 60px 20px; color: var(--muted); }
+    @media (max-width: 720px) {
+      .toolbar { grid-template-columns: 1fr; }
+      .stats { text-align: left; }
+      .card { min-height: 430px; }
+      button { flex: 1 1 calc(50% - 10px); }
+      button.primary { flex-basis: 100%; }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#0e1320; --card:#151b2b; --text:#f4f6fb; --muted:#a8b1c4; --border:#273145; --accent:#7aa2ff; --accent-dark:#5f8df4; --shadow:0 14px 35px rgba(0,0,0,.32); }
+      body { background: radial-gradient(circle at top, #18223b 0, var(--bg) 48%, #0b0f19 100%); }
+      input, select { background:#101727; color:var(--text); }
+      button { background:#24304a; color:var(--text); }
+      button.good { background:#15351f; color:#8ee2a4; }
+      .toolbar { background: rgba(21,27,43,.82); }
+      .dictationPanel { background:rgba(16,23,39,.72); }
+      .dictationInput { background:#101727; color:var(--text); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Medical Vocabulary Revision</h1>
+      <p class="subtitle">English terms appear automatically. Listen to the pronunciation, practise dictation, then reveal the Traditional Chinese / Cantonese translation.</p>
+    </header>
+
+    <section class="toolbar" aria-label="Study filters">
+      <input id="search" type="search" placeholder="Search English or Chinese…" aria-label="Search vocabulary">
+      <select id="category" aria-label="Category filter"></select>
+      <div class="stats"><span id="position">0 / 0</span></div>
+    </section>
+
+    <main>
+      <section class="card" id="card">
+        <div>
+          <div class="category" id="catText"></div>
+          <div class="label">English</div>
+          <div class="english" id="englishText"></div>
+          <div class="speakRow" aria-label="Pronunciation controls">
+            <button id="speakBtn" class="miniBtn">🔊 Speak English</button>
+            <button id="repeatBtn" class="miniBtn">Repeat x3</button>
+            <select id="accentSelect" class="selectSmall" aria-label="English accent">
+              <option value="en-GB">UK voice</option>
+              <option value="en-US">US voice</option>
+              <option value="en-AU">Australian voice</option>
+            </select>
+          </div>
+          <div class="chineseBox" id="chineseBox">
+            <div class="label">繁體中文／廣東話</div>
+            <div class="chinese" id="chineseText"></div>
+          </div>
+        </div>
+        <div>
+          <div class="controls">
+            <button id="showBtn" class="primary">Show Chinese</button>
+            <button id="autoBtn">Start auto English</button>
+            <button id="prevBtn">Previous</button>
+            <button id="nextBtn">Next</button>
+            <button id="shuffleBtn">Shuffle</button>
+            <button id="knownBtn" class="good">Mark known</button>
+            <button id="resetBtn">Reset</button>
+          </div>
+
+          <div class="dictationPanel" aria-label="Dictation practice">
+            <h2>Dictation / spelling practice</h2>
+            <p>Press “Hide English + Listen”, type what you hear, then check your spelling.</p>
+            <div class="dictationInputRow">
+              <button id="dictationBtn" class="primary">Hide English + Listen</button>
+              <input id="dictationInput" class="dictationInput" type="text" placeholder="Type the English word here…" autocomplete="off" autocapitalize="none" spellcheck="false">
+              <button id="checkBtn">Check spelling</button>
+              <button id="clearDictationBtn">Clear</button>
+            </div>
+            <div id="feedback" class="feedback"></div>
+            <div id="answerReveal" class="answerReveal"></div>
+          </div>
+
+          <div class="progressOuter" aria-label="Progress"><div class="progressInner" id="progressBar"></div></div>
+          <p class="small" id="hint">Tip: 🔊 = pronunciation, D = dictation, Enter = check spelling, Space = show/hide Chinese, ← / → = previous/next, A = start/stop auto English, S = shuffle.</p>
+        </div>
+      </section>
+      <section class="empty" id="empty">No matching words. Clear the search or choose another category.</section>
+    </main>
+  </div>
+
+<script>
+const WORDS = [{"category": "Jobs / Persons 職業／人物", "english": "Barrister", "chinese": "大律師"}, {"category": "Jobs / Persons 職業／人物", "english": "Bartender", "chinese": "酒保／調酒師"}, {"category": "Jobs / Persons 職業／人物", "english": "Builder / Labourer", "chinese": "建築工人／勞工"}, {"category": "Jobs / Persons 職業／人物", "english": "Councillor", "chinese": "議員"}, {"category": "Jobs / Persons 職業／人物", "english": "Counsellor / Counselling", "chinese": "輔導員／輔導"}, {"category": "Jobs / Persons 職業／人物", "english": "District nurse", "chinese": "地區護士"}, {"category": "Jobs / Persons 職業／人物", "english": "Forklift driver", "chinese": "叉車司機"}, {"category": "Jobs / Persons 職業／人物", "english": "Geneticist", "chinese": "遺傳學家"}, {"category": "Jobs / Persons 職業／人物", "english": "Insurer", "chinese": "保險公司／承保人"}, {"category": "Jobs / Persons 職業／人物", "english": "Kinesiologist / Osteopath / Chiropractor / Osteotherapist", "chinese": "運動機能學家／整骨師／脊醫／骨療師"}, {"category": "Jobs / Persons 職業／人物", "english": "Otolaryngologist", "chinese": "耳鼻喉科醫生"}, {"category": "Jobs / Persons 職業／人物", "english": "Phlebotomist", "chinese": "抽血技術員"}, {"category": "Jobs / Persons 職業／人物", "english": "Podiatrist", "chinese": "足病診療師"}, {"category": "Jobs / Persons 職業／人物", "english": "Rheumatologist", "chinese": "風濕科醫生"}, {"category": "Jobs / Persons 職業／人物", "english": "Roof tiler", "chinese": "瓦屋頂工人"}, {"category": "Jobs / Persons 職業／人物", "english": "Seller vs Sailor", "chinese": "賣家／售貨員 vs 水手"}, {"category": "Jobs / Persons 職業／人物", "english": "Sibling", "chinese": "兄弟姊妹"}, {"category": "Jobs / Persons 職業／人物", "english": "Sole guardian", "chinese": "唯一監護人"}, {"category": "Jobs / Persons 職業／人物", "english": "Spouse", "chinese": "配偶"}, {"category": "Jobs / Persons 職業／人物", "english": "Truck driver", "chinese": "貨車司機"}, {"category": "Diseases 疾病", "english": "Amblyopia", "chinese": "弱視"}, {"category": "Diseases 疾病", "english": "Azotaemia", "chinese": "氮血症"}, {"category": "Diseases 疾病", "english": "Bariatric", "chinese": "肥胖治療相關；減重手術相關"}, {"category": "Diseases 疾病", "english": "Bouts", "chinese": "一陣陣發作／發作期"}, {"category": "Diseases 疾病", "english": "Bulimia / Bulimia nervosa", "chinese": "暴食症／神經性暴食症"}, {"category": "Diseases 疾病", "english": "Capsulitis", "chinese": "關節囊炎"}, {"category": "Diseases 疾病", "english": "Celiac disease", "chinese": "乳糜瀉"}, {"category": "Diseases 疾病", "english": "Cervicitis", "chinese": "子宮頸炎"}, {"category": "Diseases 疾病", "english": "Dumping syndrome", "chinese": "傾倒綜合症"}, {"category": "Diseases 疾病", "english": "Dust mite", "chinese": "塵蟎"}, {"category": "Diseases 疾病", "english": "Eczema (cracked/weepy rash and scaly rash)", "chinese": "濕疹（龜裂／滲液疹及鱗狀疹）"}, {"category": "Diseases 疾病", "english": "Eczematous", "chinese": "濕疹性的"}, {"category": "Diseases 疾病", "english": "Flaky skin/scalp / Flakes", "chinese": "皮膚／頭皮脫屑；皮屑"}, {"category": "Diseases 疾病", "english": "Greasy stool", "chinese": "油脂狀大便"}, {"category": "Diseases 疾病", "english": "Head lice", "chinese": "頭虱"}, {"category": "Diseases 疾病", "english": "Helicobacter pylori", "chinese": "幽門螺旋菌"}, {"category": "Diseases 疾病", "english": "Infarcts", "chinese": "梗塞灶／梗死"}, {"category": "Diseases 疾病", "english": "Lyme disease", "chinese": "萊姆病"}, {"category": "Diseases 疾病", "english": "Mastoiditis", "chinese": "乳突炎"}, {"category": "Diseases 疾病", "english": "Nocturnal / Nocturia", "chinese": "夜間的／夜尿症"}, {"category": "Diseases 疾病", "english": "Odontalgia", "chinese": "牙痛"}, {"category": "Diseases 疾病", "english": "Palsy / Bell's palsy", "chinese": "麻痺／貝爾氏面癱"}, {"category": "Diseases 疾病", "english": "Pedal oedema", "chinese": "足部水腫"}, {"category": "Diseases 疾病", "english": "Petechial rash / Petechiae", "chinese": "瘀點皮疹／瘀點"}, {"category": "Diseases 疾病", "english": "Phlegm", "chinese": "痰"}, {"category": "Diseases 疾病", "english": "Plaque", "chinese": "牙菌膜／牙菌斑；斑塊"}, {"category": "Diseases 疾病", "english": "Precocious puberty", "chinese": "性早熟"}, {"category": "Diseases 疾病", "english": "Scurvy", "chinese": "壞血病"}, {"category": "Diseases 疾病", "english": "Sore / Cold sores / Sore throat", "chinese": "痛處／唇皰疹／喉嚨痛"}, {"category": "Diseases 疾病", "english": "Sprained ankle", "chinese": "扭傷腳踝"}, {"category": "Diseases 疾病", "english": "Testicular torsion", "chinese": "睾丸扭轉"}, {"category": "Diseases 疾病", "english": "Wart", "chinese": "疣"}, {"category": "Diseases 疾病", "english": "Whiplash", "chinese": "揮鞭式頸部創傷"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Athletic / Athlete", "chinese": "運動的／運動員"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Badminton", "chinese": "羽毛球"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Baseball", "chinese": "棒球"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Bosu ball (for physiotherapy & rehabilitation)", "chinese": "半圓平衡球（用於物理治療及康復）"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Camping", "chinese": "露營"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Competitive orienteering / Competition", "chinese": "競技定向越野／競賽"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Does ballet / Tap dancing", "chinese": "跳芭蕾舞／跳踢躂舞"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Gardening", "chinese": "園藝"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Lawn / Mowing", "chinese": "草坪／割草"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Netball", "chinese": "投球（netball）"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Nordic walking", "chinese": "北歐式健走"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Rowing", "chinese": "划艇／賽艇"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Playing darts", "chinese": "玩飛鏢"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Racket sports", "chinese": "球拍類運動"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Rock climbing", "chinese": "攀岩"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Rugby / Helmet", "chinese": "欖球／頭盔"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Skiing / Skier", "chinese": "滑雪／滑雪者"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Squash", "chinese": "壁球"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Squat / Bend / Half squat", "chinese": "深蹲／彎腰／半蹲"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Stretching", "chinese": "伸展"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Tai Chi", "chinese": "太極"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Tournament", "chinese": "錦標賽"}, {"category": "Sports / Exercise / Training / Activities 運動／鍛鍊／訓練／活動", "english": "Treadmill", "chinese": "跑步機"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Fussy baby / Fussiness / Fuzzy vision", "chinese": "嬰兒煩躁哭鬧／煩躁不安／視力模糊"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Lax / tender abdomen", "chinese": "腹部鬆軟／有觸痛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Let off the leash / Off-leash feeling", "chinese": "像被鬆綁／不受約束的感覺"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Limp / I have a limp", "chinese": "跛行／我走路一拐一拐"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Supple neck", "chinese": "頸部柔軟；無僵硬"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Aches / Aching / Itching", "chinese": "酸痛／隱痛／痕癢"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Agony", "chinese": "劇痛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Alignment / Misalignment / Misaligned", "chinese": "對齊／錯位／位置不正"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Awkward", "chinese": "不靈活；不舒服；尷尬（按語境）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Band-like pressure", "chinese": "束帶狀壓迫感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Barking cough / Nasty cough", "chinese": "犬吠樣咳嗽／嚴重咳嗽"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Be in a state / Get into a state", "chinese": "情緒激動／慌亂起來"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Bitter / Sour (not sore) taste", "chinese": "苦味／酸味（非疼痛）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Black specks in urine/stool", "chinese": "尿液／糞便中有黑點"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Bloated", "chinese": "腹脹"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Blocked up (head/nose; flu or congestion)", "chinese": "頭部／鼻腔堵塞、翳悶（感冒或鼻塞時）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Blowing, roaring, buzzing, hissing, humming, whistling, crackling, bubbling, “Rice Krispies” or sizzling sound in the ear", "chinese": "耳內吹氣聲、轟鳴聲、嗡嗡聲、嘶嘶聲、哼鳴聲、哨聲、爆裂聲、泡泡聲、「卜卜脆」聲或滋滋聲"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Brain fog", "chinese": "腦霧"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Breakthrough pain", "chinese": "突破性疼痛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Breast dimpling", "chinese": "乳房凹陷"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "“Bullet in the head” sensation", "chinese": "頭部像被子彈穿過般的痛感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Bump into something / Skin bumps", "chinese": "碰撞東西／皮膚凸起"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Burbling vs heartburn", "chinese": "肚內咕嚕聲 vs 心口灼熱／胃酸倒流感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Burning", "chinese": "灼熱感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Burp / Burping", "chinese": "打嗝／噯氣"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Cannot grip things", "chinese": "無法握住東西"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Chapped lips / Chapped mouth", "chinese": "乾裂嘴唇／乾裂嘴巴"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Chest pain like a strained or pulled muscle", "chinese": "胸痛如拉傷肌肉"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Clammy", "chinese": "皮膚濕冷黏膩"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Clogged ear or nose (flu or congestion)", "chinese": "耳塞或鼻塞（感冒或充血時）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Colicky (abdominal pain)", "chinese": "絞痛（腹部）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Complained of breaking wind (= flatulence / passing flatus or gas)", "chinese": "表示經常放屁／排氣（腸氣）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Concomitant = associated", "chinese": "伴隨的／相關的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Coryzal symptoms", "chinese": "傷風症狀"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Cramping / Grumpy / Irritable", "chinese": "痙攣性疼痛／脾氣差／易怒"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Craving", "chinese": "渴望／渴求"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Crescendo-decrescendo", "chinese": "漸強—漸弱"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Cripple / Crippled", "chinese": "跛行者／嚴重傷殘；行動受限（較舊或冒犯性用語，宜按語境處理）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Crusty mucus", "chinese": "結痂黏液"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Deaf, blind, dumb/mute (muteness/mutism)", "chinese": "聾／盲／啞；緘默（症）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Dental caries", "chinese": "蛀牙"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Diaphoresis", "chinese": "大量出汗"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Diseased vs deceased (died)", "chinese": "患病的 vs 已故的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Dizzy spells", "chinese": "間歇性頭暈"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Dreadful", "chinese": "很嚴重／非常不適／可怕的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Excruciating", "chinese": "極度劇痛的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Feeling “a little off” or “up and down”", "chinese": "感覺有點不妥／狀態時好時壞"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Feeling “off-colour”", "chinese": "感覺不舒服／不太精神"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Feeling “run-down”", "chinese": "感覺疲憊不堪／身體虛弱"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Feeling weary (weary brain / weary eyes) / Weariness", "chinese": "感到疲憊（腦疲勞／眼睛疲勞）／疲憊感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Feeling woozy", "chinese": "感到頭昏眼花"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Feels trembly (tremble/trembling) / Shaky", "chinese": "感到顫抖／發抖；不穩"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Fertility", "chinese": "生育力"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Flabby arms / abdomen", "chinese": "手臂／腹部鬆弛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Flickering or flashing lights (vision)", "chinese": "視覺閃爍或閃光"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Floppy baby", "chinese": "肌張力低下的嬰兒"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Grit in eyes", "chinese": "眼睛有異物感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Growth spurt", "chinese": "生長突增期"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Habit-forming (addictive)", "chinese": "容易成癮的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Hacking cough / Whooping cough", "chinese": "乾咳／百日咳"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Husky voice", "chinese": "沙啞聲音"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Icterus", "chinese": "黃疸（尤指眼白發黃）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Impending sensation of death", "chinese": "瀕死感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Impingement (rotator cuff impingement)", "chinese": "夾擠症（肩袖夾擠症）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Intensified", "chinese": "加劇"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Intermenstrual / Post-coital bleeding / Coital / Coitus", "chinese": "經期間出血／性交後出血／性交的／性交"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Jarring injury / movements", "chinese": "震盪性受傷／震動性動作"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Jerking movements", "chinese": "抽搐動作"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Jet lag (= very tired after travel)", "chinese": "時差反應（旅行後極度疲累）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Knee bends / Knee bent", "chinese": "屈膝"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Knee has clicking/popping sound", "chinese": "膝蓋有喀喀聲／啪聲"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Knotted sensation in the abdomen", "chinese": "腹部有打結的感覺"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Lethargy", "chinese": "嗜睡／倦怠"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Lightheadedness / Lightheaded", "chinese": "頭昏眼花"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Lockjaw", "chinese": "牙關緊閉"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Loose stool / Loose bowel movements", "chinese": "稀便／大便較稀"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Moaning / Moaned", "chinese": "呻吟"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Mood swings / Moody", "chinese": "情緒波動／情緒化"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Muffled", "chinese": "聲音悶住／聽起來不清楚"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Nicked skin", "chinese": "皮膚割傷"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Niggling / Nagging", "chinese": "隱隱作痛／持續纏擾的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Nose stuffiness / Stuffy nose", "chinese": "鼻塞"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Numbness or numb", "chinese": "麻木"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Oozing of blood/pus", "chinese": "血液／膿液滲出"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Overwhelmed / Overwhelming", "chinese": "不知所措／難以承受"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Panicky", "chinese": "恐慌"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Pass sand/gravel in stool or urine", "chinese": "糞便／尿液中排出沙粒或砂石樣物"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Pinch / Pinched / Trapped nerve", "chinese": "夾住／受壓／神經受壓"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Pinchable", "chinese": "可捏起的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Pins and needles / Numbness", "chinese": "針刺感／麻痺感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Pitting oedema (not “biting”)", "chinese": "凹陷性水腫（不是 biting）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Pounding headache / heart / ear / pain / pressure", "chinese": "搏動性頭痛／心跳強烈／耳內搏動感／搏動性疼痛／搏動性壓迫感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Prickling", "chinese": "刺痛感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Puckered skin / Skin dimpling", "chinese": "皮膚皺縮／凹陷"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Pulling sensation (in neck)", "chinese": "牽拉感（頸部）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Rub / Rubbing / Rubbed eyes", "chinese": "揉眼睛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Rumbling sound in abdomen", "chinese": "腹部隆隆聲"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Scald / Scalded", "chinese": "燙傷"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Searing pain", "chinese": "灼燒般劇痛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Seborrhoeic", "chinese": "脂溢性的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Seeing floaters", "chinese": "看見飛蚊／飛蚊症"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Shivering", "chinese": "顫抖"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Short-sighted", "chinese": "近視"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Skin tag / Boil / Burrow / Ingrown hair", "chinese": "皮贅／癤瘡／鑽行痕跡／倒生毛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Slipped / Twisted disc or bone", "chinese": "滑脫／扭傷；椎間盤突出（按語境）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Slurred / Slurring speech", "chinese": "說話含糊"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Sneezing", "chinese": "打噴嚏"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Soaked / Soaking (menstrual periods)", "chinese": "月經量多至濕透衛生用品"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Soothe", "chinese": "舒緩"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Splitting headache", "chinese": "劇烈頭痛／頭痛欲裂"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Squinting", "chinese": "瞇眼"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Stabbing pain", "chinese": "刺痛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Sting / Stung", "chinese": "刺痛／被螫或刺傷"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Stinging/burning pain", "chinese": "刺痛感／灼痛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Stomach feels full / Feel full", "chinese": "胃部脹滿／覺得飽"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Stomping gait / Scissoring gait / Festinating gait / Freezing gait / Waddling or Trendelenburg gait / Antalgic gait", "chinese": "踩踏步態／剪刀步態／慌張步態／凍結步態／鴨行步態或臀中肌步態／止痛步態"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Stooped gait / Stooping walk / Stooped posture", "chinese": "彎腰步態／彎腰行走／彎腰姿勢"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Straining", "chinese": "用力／過度用力"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Striking", "chinese": "顯著的／引人注目的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Struvite stone", "chinese": "鳥糞石（磷酸銨鎂結石）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Stumble", "chinese": "絆倒"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Stutter / Stuttering", "chinese": "口吃"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Sudden burst", "chinese": "突然爆發"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Suffocating / Choke / Strangle / Asphyxiate / Smother / Stifle", "chinese": "窒息／哽噎／勒住／使窒息／悶住／抑制呼吸"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Symptoms subsided", "chinese": "症狀減輕／消退"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Tartar", "chinese": "牙石"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Tear / Torn / Trim", "chinese": "撕裂／已撕裂／修剪"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Tearing / Ripping sensation", "chinese": "撕裂感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Terrible vs trouble / Terrible pain", "chinese": "可怕的、嚴重的 vs 麻煩／劇痛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Throw up (vomiting)", "chinese": "嘔吐"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Tingling / Tingle", "chinese": "刺痛感"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Tiredness", "chinese": "疲倦"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Toothache", "chinese": "牙痛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Twinging / Twinges / Twinge / Tightness pain", "chinese": "一陣刺痛／抽痛／刺痛一下／繃緊痛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Unattainable", "chinese": "無法達到的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Unbearable / Intolerable", "chinese": "難以忍受的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Venomous", "chinese": "有毒的（如毒蛇、毒蟲）"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Vexing pain", "chinese": "令人困擾的疼痛"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Worn out (feeling)", "chinese": "精疲力竭的感覺"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Worrisome", "chinese": "令人擔憂的"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Metallic taste", "chinese": "金屬味"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Cramps in…", "chinese": "…抽筋"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Lack of…", "chinese": "缺乏…"}, {"category": "Pain / Sensations / Feelings / Symptoms 疼痛／感覺／感受／症狀", "english": "Reddish-brown / dark-red urine", "chinese": "紅褐色／深紅色尿液"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Acupressure", "chinese": "穴位按壓"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Advair Diskus", "chinese": "Advair Diskus（氟替卡松／沙美特羅吸入器）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Aerobic exercise", "chinese": "有氧運動"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Anti-sickness medicine", "chinese": "止嘔藥"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Arthroplasty / Arthroscopy", "chinese": "關節成形術／關節鏡檢查或手術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Ativan", "chinese": "阿提萬（勞拉西泮）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Baclofen", "chinese": "巴氯芬（肌肉鬆弛劑）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Benadryl", "chinese": "苯海拉明"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Bereavement counselling", "chinese": "哀傷輔導"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Bladder washout", "chinese": "膀胱沖洗"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Cauterisation", "chinese": "燒灼術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Cease / ceasing / cessation of smoking", "chinese": "停止吸煙／戒煙"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Celestone Soluspan", "chinese": "Celestone Soluspan（倍他米松注射劑）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Cholecystectomy", "chinese": "膽囊切除術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Clopidogrel", "chinese": "氯吡格雷（抗血小板藥）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Codman-Hakim shunt", "chinese": "Codman-Hakim 分流器"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Colace (OTC for constipation)", "chinese": "Colace（非處方通便劑）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Colofac", "chinese": "Colofac（美貝韋林）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Colposuspension", "chinese": "陰道旁膀胱頸懸吊術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Compression stockings / socks", "chinese": "壓力襪"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Crestor, Tricor, Sudafed", "chinese": "瑞舒伐他汀、非諾貝特、偽麻黃鹼"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Cymbalta", "chinese": "度洛西汀"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Decongestant", "chinese": "解充血劑"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Dentures", "chinese": "假牙"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Detrol", "chinese": "得妥（托特羅定）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Dialyvite", "chinese": "透析維他命補充劑"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Diary / Dairy products", "chinese": "日記／乳製品"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Dilaudid", "chinese": "氫嗎啡酮"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Dilantin", "chinese": "苯妥英鈉"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Elastoplast", "chinese": "彈性膠布／膠布"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "EpiPen", "chinese": "腎上腺素自動注射筆"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Excedrin", "chinese": "Excedrin（含止痛及咖啡因成分的頭痛藥）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Exploratory laparotomy", "chinese": "探查性剖腹手術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Floradix", "chinese": "Floradix（補鐵產品）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Flurbiprofen", "chinese": "氟比洛芬（消炎止痛藥）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Fortnight / Fortnightly", "chinese": "兩週／每兩週"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Gentle exercise", "chinese": "溫和運動"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Ginsana", "chinese": "人參保健品"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Hand splints", "chinese": "手部夾板"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Handrails", "chinese": "扶手"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Head pad", "chinese": "頭墊"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Heat pad / Heating pad", "chinese": "熱敷墊"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Humidifier", "chinese": "濕化器"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Hydrochlorothiazide, lisinopril, pravastatin, metoprolol, diltiazem, hydrocodone", "chinese": "氫氯噻嗪、賴諾普利、普伐他汀、美托洛爾、地爾硫䓬、氫可酮"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Illicit drugs/substances", "chinese": "非法藥物／物質"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Immobilisation boot", "chinese": "固定靴"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Imodium", "chinese": "易蒙停（洛哌丁胺）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "IVC filter", "chinese": "下腔靜脈濾器"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Keflex", "chinese": "頭孢氨苄"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Klonopin", "chinese": "氯硝西泮"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Laminectomy", "chinese": "椎板切除術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Lice comb", "chinese": "除虱梳"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Lipitor", "chinese": "立普妥（阿托伐他汀）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Losec", "chinese": "洛賽克（奧美拉唑）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Lovaza", "chinese": "Lovaza（魚油處方藥）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Lukewarm bath", "chinese": "溫水浴"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Macrogol", "chinese": "聚乙二醇（通便劑）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Mastoidectomy", "chinese": "乳突切除術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "MDMA / Ecstasy", "chinese": "MDMA／搖頭丸"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Microdiscectomy / Microdecompression / Microdiskectomy", "chinese": "微創椎間盤切除術／微創減壓術／微創椎間盤切除術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Mitomycin", "chinese": "絲裂黴素（抗癌藥）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Morning-after pill / Monofeme", "chinese": "事後避孕藥／Monofeme（複合口服避孕藥）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Motrin", "chinese": "Motrin（布洛芬）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Neurontin / Celebrex", "chinese": "加巴噴丁／塞來昔布"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Nexium", "chinese": "艾索美拉唑"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Oestradiol", "chinese": "雌二醇"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Oily / Oil moisturiser", "chinese": "油性潤膚劑"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Opiate mix", "chinese": "阿片類藥物組合"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Pacerone / Toprol / Zetia", "chinese": "胺碘酮／琥珀酸美托洛爾／依折麥布"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Padding", "chinese": "軟墊／墊料"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Pads and tampons", "chinese": "衛生巾及棉條"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Peppermint oil", "chinese": "薄荷油"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Pethidine (pain killer)", "chinese": "哌替啶（止痛藥）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Pillow / Pillow cases", "chinese": "枕頭／枕套"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Plavix", "chinese": "Plavix（氯吡格雷）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Prednisone / Prednisolone", "chinese": "潑尼松／潑尼松龍"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Prevnar vaccine", "chinese": "肺炎球菌疫苗"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Proscar", "chinese": "非那雄胺"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Protonix", "chinese": "泮托拉唑"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Puffer", "chinese": "吸入器／噴霧吸入器"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Purgatives / Aperients", "chinese": "通便劑／輕瀉劑"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Quick-Eze / Peppermint", "chinese": "Quick-Eze 胃藥／薄荷"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Remedy / Remedies", "chinese": "療法／補救方法"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Rhinocort / Nasacort / Dilantin", "chinese": "布地奈德鼻噴霧／曲安奈德鼻噴霧／苯妥英"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Ritalin", "chinese": "利他林（鹽酸甲酯）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Rivaroxaban", "chinese": "利伐沙班（抗凝血藥）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Septoplasty", "chinese": "鼻中隔整形術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Simethicone", "chinese": "西甲矽油（去脹氣藥）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Sling for shoulder", "chinese": "肩部吊帶"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Soap", "chinese": "肥皂"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Sotalol", "chinese": "索他洛爾（抗心律失常藥）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Soup / Soup substitute", "chinese": "湯／湯類代替品"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Sperm banking", "chinese": "精子儲存"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Sponge bath", "chinese": "海綿擦浴"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Stay off your feet", "chinese": "盡量避免站立或走動"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Steri-Strips", "chinese": "醫用免縫膠布"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Sturdy shoes", "chinese": "穩固的鞋"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Suppository", "chinese": "栓劑"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Symbicort (budesonide/formoterol) = inhalers", "chinese": "信必可（布地奈德／福莫特羅）吸入劑"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Synthroid", "chinese": "左旋甲狀腺素"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Tenormin (beta-blocker)", "chinese": "Tenormin（阿替洛爾；乙型阻滯劑）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Towel", "chinese": "毛巾"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Tummy tuck / Abdominoplasty", "chinese": "腹部整形術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Ventolin (albuterol)", "chinese": "沙丁胺醇吸入劑"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Vioxx", "chinese": "羅非昔布（已撤市）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Wheelie walker / Walking stick / Rollator", "chinese": "有輪助行架／手杖／四輪助行車"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Xanax (alprazolam) / Valium", "chinese": "阿普唑侖／地西泮"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Zantac (Ranitidine), Zyrtec (cetirizine), Claritin", "chinese": "雷尼替丁、西替利嗪、氯雷他定"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Zoloft / Panadeine Forte", "chinese": "Zoloft（舍曲林）／Panadeine Forte（撲熱息痛加可待因）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Cystoscopy", "chinese": "膀胱鏡檢查"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Embolisation", "chinese": "栓塞術"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Vitamin K / D deficiency", "chinese": "維他命 K／D 缺乏"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Caffeine / Caffeinated", "chinese": "咖啡因／含咖啡因"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Senna", "chinese": "番瀉葉（通便劑）"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Beta-blockers", "chinese": "乙型阻滯劑"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Vegetarian diet", "chinese": "素食飲食"}, {"category": "Medications / Interventions 藥物／治療介入", "english": "Cardiologist / Physiotherapy", "chinese": "心臟科醫生／物理治療"}, {"category": "Food & Drinks 食物及飲品", "english": "Bacon", "chinese": "煙肉"}, {"category": "Food & Drinks 食物及飲品", "english": "Bingeing food/drink / Binge", "chinese": "暴飲暴食／一次大量進食或飲用"}, {"category": "Food & Drinks 食物及飲品", "english": "Butter / Oats", "chinese": "牛油／燕麥"}, {"category": "Food & Drinks 食物及飲品", "english": "Coconut / Peanut", "chinese": "椰子／花生"}, {"category": "Food & Drinks 食物及飲品", "english": "Crisps / Chips", "chinese": "薯片／薯條（按英美語境）"}, {"category": "Food & Drinks 食物及飲品", "english": "Fizzy drinks", "chinese": "汽水"}, {"category": "Food & Drinks 食物及飲品", "english": "Gluten-free diet", "chinese": "無麩質飲食"}, {"category": "Food & Drinks 食物及飲品", "english": "Lamb meat", "chinese": "羊肉"}, {"category": "Food & Drinks 食物及飲品", "english": "Lean meat", "chinese": "瘦肉"}, {"category": "Food & Drinks 食物及飲品", "english": "Legumes", "chinese": "豆類"}, {"category": "Food & Drinks 食物及飲品", "english": "Little and often regime", "chinese": "少食多餐"}, {"category": "Food & Drinks 食物及飲品", "english": "Milky puddings", "chinese": "牛奶布甸"}, {"category": "Food & Drinks 食物及飲品", "english": "Pears", "chinese": "梨"}, {"category": "Food & Drinks 食物及飲品", "english": "Refined food", "chinese": "精製食品"}, {"category": "Food & Drinks 食物及飲品", "english": "Shellfish", "chinese": "貝殼類海鮮"}, {"category": "Food & Drinks 食物及飲品", "english": "Soy / Soybean", "chinese": "大豆"}, {"category": "Food & Drinks 食物及飲品", "english": "Starch", "chinese": "澱粉"}, {"category": "Food & Drinks 食物及飲品", "english": "Veal meat", "chinese": "小牛肉"}, {"category": "Food & Drinks 食物及飲品", "english": "Wheat, rye, barley, triticale, processed meat", "chinese": "小麥、黑麥、大麥、小黑麥、加工肉類"}, {"category": "Food & Drinks 食物及飲品", "english": "Whisky", "chinese": "威士忌"}, {"category": "Investigations / Tests 檢查", "english": "Cardiotocograph / Cardiotocography", "chinese": "胎心宮縮監測儀／胎心宮縮監測"}, {"category": "Investigations / Tests 檢查", "english": "Cholangiogram", "chinese": "膽管造影術"}, {"category": "Investigations / Tests 檢查", "english": "Colposcopy / Cauterisation", "chinese": "陰道鏡檢查／燒灼治療"}, {"category": "Investigations / Tests 檢查", "english": "Cystourethroscopy", "chinese": "膀胱尿道鏡檢查"}, {"category": "Investigations / Tests 檢查", "english": "Dietary counselling", "chinese": "飲食諮詢"}, {"category": "Investigations / Tests 檢查", "english": "Down gaze / Horizontal gaze", "chinese": "向下凝視／水平凝視"}, {"category": "Investigations / Tests 檢查", "english": "Oesophagogastroduodenoscopy / Esophagogastroduodenoscopy", "chinese": "食道胃十二指腸鏡檢查"}, {"category": "Investigations / Tests 檢查", "english": "Fluorescein", "chinese": "螢光素"}, {"category": "Investigations / Tests 檢查", "english": "Forceps", "chinese": "鉗子／產鉗"}, {"category": "Investigations / Tests 檢查", "english": "Proctoscopy", "chinese": "直腸鏡檢查"}, {"category": "Investigations / Tests 檢查", "english": "Punch biopsy", "chinese": "打孔活組織檢查"}, {"category": "Investigations / Tests 檢查", "english": "Scheduled", "chinese": "預約的"}, {"category": "Investigations / Tests 檢查", "english": "Scintigraphy / Scintillation", "chinese": "閃爍掃描／閃爍"}, {"category": "Investigations / Tests 檢查", "english": "Sham (surgery/drug)", "chinese": "假手術／安慰劑"}, {"category": "Body Parts 身體部位", "english": "Abdominal girth", "chinese": "腹圍"}, {"category": "Body Parts 身體部位", "english": "Achilles tendon / Quads / Hamstrings", "chinese": "阿基里斯腱／股四頭肌／腿後肌"}, {"category": "Body Parts 身體部位", "english": "Adnexa / Adnexal", "chinese": "附件（子宮附件）"}, {"category": "Body Parts 身體部位", "english": "Armpit", "chinese": "腋下"}, {"category": "Body Parts 身體部位", "english": "Belly button = navel = umbilicus", "chinese": "肚臍"}, {"category": "Body Parts 身體部位", "english": "Belly / Tummy", "chinese": "肚子"}, {"category": "Body Parts 身體部位", "english": "Buttock / Bum cheek", "chinese": "臀部／屁股一邊"}, {"category": "Body Parts 身體部位", "english": "Calves / Calf", "chinese": "小腿"}, {"category": "Body Parts 身體部位", "english": "Ear", "chinese": "耳朵"}, {"category": "Body Parts 身體部位", "english": "Iliopsoas", "chinese": "髂腰肌"}, {"category": "Body Parts 身體部位", "english": "Kneecap", "chinese": "膝蓋骨"}, {"category": "Body Parts 身體部位", "english": "Lamina propria", "chinese": "固有層"}, {"category": "Body Parts 身體部位", "english": "Lean body mass", "chinese": "瘦體重／去脂體重"}, {"category": "Body Parts 身體部位", "english": "Loin", "chinese": "腰背部／腰側"}, {"category": "Body Parts 身體部位", "english": "Lump / Hump", "chinese": "腫塊／駝背"}, {"category": "Body Parts 身體部位", "english": "Palm", "chinese": "手掌"}, {"category": "Body Parts 身體部位", "english": "Scrotal", "chinese": "陰囊的"}, {"category": "Body Parts 身體部位", "english": "Slime / Mucus", "chinese": "黏液"}, {"category": "Body Parts 身體部位", "english": "Sole", "chinese": "腳底"}, {"category": "Body Parts 身體部位", "english": "Supine / Prone", "chinese": "仰臥／俯臥"}, {"category": "Body Parts 身體部位", "english": "Toe", "chinese": "腳趾"}, {"category": "Body Parts 身體部位", "english": "Torso", "chinese": "軀幹"}, {"category": "Body Parts 身體部位", "english": "Urethral", "chinese": "尿道的"}, {"category": "Body Parts 身體部位", "english": "Waist", "chinese": "腰部"}, {"category": "Body Parts 身體部位", "english": "White of the eye", "chinese": "眼白"}, {"category": "Body Parts 身體部位", "english": "Womb = uterus", "chinese": "子宮"}, {"category": "Other 其他", "english": "Abrupt", "chinese": "突然的"}, {"category": "Other 其他", "english": "Abstain", "chinese": "戒除／克制"}, {"category": "Other 其他", "english": "Adhesive", "chinese": "黏合劑／有黏性的"}, {"category": "Other 其他", "english": "Ambulate", "chinese": "行走"}, {"category": "Other 其他", "english": "Auditory", "chinese": "聽覺的"}, {"category": "Other 其他", "english": "Bear weight", "chinese": "負重／承重"}, {"category": "Other 其他", "english": "Bending over", "chinese": "彎腰"}, {"category": "Other 其他", "english": "Blend", "chinese": "混合"}, {"category": "Other 其他", "english": "Brace", "chinese": "支架／護具"}, {"category": "Other 其他", "english": "Breech", "chinese": "臀位（嬰兒）"}, {"category": "Other 其他", "english": "Chaotic / Chaos", "chinese": "混亂的／混亂"}, {"category": "Other 其他", "english": "Chores", "chinese": "家務"}, {"category": "Other 其他", "english": "Climb", "chinese": "攀爬"}, {"category": "Other 其他", "english": "Damp weather", "chinese": "潮濕天氣"}, {"category": "Other 其他", "english": "Dope smoker", "chinese": "吸食大麻／毒品的人"}, {"category": "Other 其他", "english": "Dozen", "chinese": "一打"}, {"category": "Other 其他", "english": "Erratic", "chinese": "不規律的"}, {"category": "Other 其他", "english": "Flip top", "chinese": "翻蓋"}, {"category": "Other 其他", "english": "Guitar string", "chinese": "吉他弦"}, {"category": "Other 其他", "english": "Halter", "chinese": "頸掛式"}, {"category": "Other 其他", "english": "Halved", "chinese": "減半"}, {"category": "Other 其他", "english": "Hold", "chinese": "保持"}, {"category": "Other 其他", "english": "Intuitive / Counter-intuitive", "chinese": "直覺的／違反直覺的"}, {"category": "Other 其他", "english": "Kindergarten", "chinese": "幼稚園"}, {"category": "Other 其他", "english": "Maternity", "chinese": "產科；孕產相關；產假（按語境）"}, {"category": "Other 其他", "english": "Mind-bending", "chinese": "令人費解的"}, {"category": "Other 其他", "english": "Momentum", "chinese": "動量；勢頭（按語境）"}, {"category": "Other 其他", "english": "Mortgage", "chinese": "按揭"}, {"category": "Other 其他", "english": "Nearly", "chinese": "幾乎"}, {"category": "Other 其他", "english": "Nimbly", "chinese": "靈活地"}, {"category": "Other 其他", "english": "Overlook", "chinese": "忽略／俯瞰（按語境）"}, {"category": "Other 其他", "english": "Perspiration", "chinese": "出汗／汗液"}, {"category": "Other 其他", "english": "Purple", "chinese": "紫色"}, {"category": "Other 其他", "english": "Quiz", "chinese": "測驗"}, {"category": "Other 其他", "english": "Recuperation", "chinese": "康復"}, {"category": "Other 其他", "english": "Resin", "chinese": "樹脂"}, {"category": "Other 其他", "english": "Rigour / Rigorous", "chinese": "寒顫（醫學語境）／嚴謹的；嚴格的"}, {"category": "Other 其他", "english": "Spiritual", "chinese": "心靈上的／精神層面的"}, {"category": "Other 其他", "english": "Stricter", "chinese": "更嚴格的"}, {"category": "Other 其他", "english": "Susceptible", "chinese": "易感的"}, {"category": "Other 其他", "english": "Sustainable", "chinese": "可持續的"}, {"category": "Other 其他", "english": "Tease out", "chinese": "梳理出／慢慢引出"}, {"category": "Other 其他", "english": "Teeter", "chinese": "搖晃"}, {"category": "Other 其他", "english": "Twinge", "chinese": "一陣刺痛"}, {"category": "Other 其他", "english": "Vulnerable", "chinese": "脆弱的"}, {"category": "Other 其他", "english": "Freak", "chinese": "怪人／異常情況；嚇壞（按語境）"}, {"category": "Other 其他", "english": "Buttoning", "chinese": "扣鈕扣"}, {"category": "Other 其他", "english": "Carry on = continue", "chinese": "繼續"}, {"category": "Other 其他", "english": "Fomites / Utensils", "chinese": "污染媒介物／器具"}, {"category": "Other 其他", "english": "Baggage handler", "chinese": "行李搬運員"}, {"category": "Other 其他", "english": "Underactive thyroid", "chinese": "甲狀腺功能低下"}, {"category": "Other 其他", "english": "Slurred speech", "chinese": "說話含糊不清"}, {"category": "Other 其他", "english": "Irritated", "chinese": "受刺激的／煩躁"}, {"category": "Other 其他", "english": "Brain fog", "chinese": "腦霧"}, {"category": "Other 其他", "english": "Infection", "chinese": "感染"}, {"category": "Other 其他", "english": "Counselling", "chinese": "輔導"}, {"category": "Other 其他", "english": "Motivation", "chinese": "動力"}, {"category": "Other 其他", "english": "Bereavement", "chinese": "喪親之痛"}, {"category": "Other 其他", "english": "Contagious", "chinese": "傳染性的"}];
+let filtered = [...WORDS];
+let index = 0;
+let showing = false;
+let autoMode = false;
+let autoTimer = null;
+const autoDelayMs = 5000;
+let dictationMode = false;
+let repeatTimer = null;
+const knownKey = 'medical-vocab-known-v1';
+let known = new Set(JSON.parse(localStorage.getItem(knownKey) || '[]'));
+
+const els = {
+  search: document.getElementById('search'),
+  category: document.getElementById('category'),
+  position: document.getElementById('position'),
+  catText: document.getElementById('catText'),
+  englishText: document.getElementById('englishText'),
+  speakBtn: document.getElementById('speakBtn'),
+  repeatBtn: document.getElementById('repeatBtn'),
+  accentSelect: document.getElementById('accentSelect'),
+  dictationBtn: document.getElementById('dictationBtn'),
+  dictationInput: document.getElementById('dictationInput'),
+  checkBtn: document.getElementById('checkBtn'),
+  clearDictationBtn: document.getElementById('clearDictationBtn'),
+  feedback: document.getElementById('feedback'),
+  answerReveal: document.getElementById('answerReveal'),
+  chineseBox: document.getElementById('chineseBox'),
+  chineseText: document.getElementById('chineseText'),
+  showBtn: document.getElementById('showBtn'),
+  autoBtn: document.getElementById('autoBtn'),
+  prevBtn: document.getElementById('prevBtn'),
+  nextBtn: document.getElementById('nextBtn'),
+  shuffleBtn: document.getElementById('shuffleBtn'),
+  knownBtn: document.getElementById('knownBtn'),
+  resetBtn: document.getElementById('resetBtn'),
+  progressBar: document.getElementById('progressBar'),
+  card: document.getElementById('card'),
+  empty: document.getElementById('empty')
+};
+
+function wordId(w) { return `${w.category}|${w.english}|${w.chinese}`; }
+
+function setupCategories() {
+  const cats = [...new Set(WORDS.map(w => w.category))];
+  els.category.innerHTML = '<option value="all">All categories</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+function currentWord() {
+  if (!filtered.length) return null;
+  if (index < 0) index = filtered.length - 1;
+  if (index >= filtered.length) index = 0;
+  return filtered[index];
+}
+
+function cleanForSpeech(text) {
+  return String(text)
+    .replace(/\s*=\s*/g, ', equals ')
+    .replace(/\s*\/\s*/g, ', ')
+    .replace(/\bvs\b/gi, ' versus ')
+    .replace(/[()"“”']/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeAnswer(text) {
+  return String(text)
+    .toLowerCase()
+    .replace(/[“”‘’']/g, '')
+    .replace(/\s*=\s*/g, ' equals ')
+    .replace(/\s*\/\s*/g, ' / ')
+    .replace(/\bversus\b/g, 'vs')
+    .replace(/[^a-z0-9/ -]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function speakCurrent(times = 1) {
+  const w = currentWord();
+  if (!w || !('speechSynthesis' in window)) {
+    alert('Speech is not supported in this browser. Try Safari or Chrome.');
+    return;
+  }
+  if (repeatTimer) clearTimeout(repeatTimer);
+  window.speechSynthesis.cancel();
+  const phrase = cleanForSpeech(w.english);
+  const lang = els.accentSelect.value || 'en-GB';
+  let count = 0;
+  const speakOnce = () => {
+    const utterance = new SpeechSynthesisUtterance(phrase);
+    utterance.lang = lang;
+    utterance.rate = 0.82;
+    utterance.pitch = 1;
+    utterance.onend = () => {
+      count++;
+      if (count < times) repeatTimer = setTimeout(speakOnce, 650);
+    };
+    window.speechSynthesis.speak(utterance);
+  };
+  speakOnce();
+}
+
+function resetDictation(clearInput = true) {
+  dictationMode = false;
+  els.englishText.style.visibility = 'visible';
+  els.dictationBtn.textContent = 'Hide English + Listen';
+  els.feedback.textContent = '';
+  els.feedback.className = 'feedback';
+  els.answerReveal.textContent = '';
+  if (clearInput) els.dictationInput.value = '';
+}
+
+function startDictation() {
+  if (!filtered.length) return;
+  if (autoMode) stopAuto();
+  dictationMode = true;
+  showing = false;
+  els.englishText.style.visibility = 'hidden';
+  els.chineseBox.style.display = 'none';
+  els.showBtn.textContent = 'Show Chinese';
+  els.dictationBtn.textContent = 'Listen again';
+  els.feedback.textContent = '';
+  els.feedback.className = 'feedback';
+  els.answerReveal.textContent = '';
+  els.dictationInput.value = '';
+  els.dictationInput.focus();
+  speakCurrent(1);
+}
+
+function checkDictation() {
+  const w = currentWord();
+  if (!w) return;
+  const typed = normalizeAnswer(els.dictationInput.value);
+  const answer = normalizeAnswer(w.english);
+  els.englishText.style.visibility = 'visible';
+  dictationMode = false;
+  els.dictationBtn.textContent = 'Hide English + Listen';
+  if (!typed) {
+    els.feedback.textContent = 'Type your answer first.';
+    els.feedback.className = 'feedback no';
+    return;
+  }
+  if (typed === answer) {
+    els.feedback.textContent = 'Correct ✓';
+    els.feedback.className = 'feedback ok';
+    els.answerReveal.textContent = '';
+  } else {
+    els.feedback.textContent = 'Not quite — compare with the answer above.';
+    els.feedback.className = 'feedback no';
+    els.answerReveal.textContent = 'Correct spelling: ' + w.english;
+  }
+}
+
+function applyFilters() {
+  const q = els.search.value.trim().toLowerCase();
+  const cat = els.category.value;
+  filtered = WORDS.filter(w => {
+    const inCat = cat === 'all' || w.category === cat;
+    const inSearch = !q || (w.english + ' ' + w.chinese + ' ' + w.category).toLowerCase().includes(q);
+    return inCat && inSearch;
+  });
+  index = 0;
+  showing = false;
+  resetDictation(true);
+  if (autoMode) startAuto(); else render();
+}
+
+function render() {
+  if (!filtered.length) {
+    els.card.style.display = 'none';
+    els.empty.style.display = 'block';
+    els.position.textContent = `0 / 0`;
+    els.progressBar.style.width = '0%';
+    return;
+  }
+  els.card.style.display = 'flex';
+  els.empty.style.display = 'none';
+  if (index < 0) index = filtered.length - 1;
+  if (index >= filtered.length) index = 0;
+  const w = filtered[index];
+  els.catText.textContent = w.category;
+  els.englishText.textContent = w.english;
+  if (!dictationMode) els.englishText.style.visibility = 'visible';
+  els.chineseText.textContent = w.chinese;
+  els.chineseBox.style.display = showing ? 'block' : 'none';
+  els.showBtn.textContent = showing ? 'Hide Chinese' : 'Show Chinese';
+  els.autoBtn.textContent = autoMode ? 'Stop auto English' : 'Start auto English';
+  els.position.textContent = `${index + 1} / ${filtered.length}`;
+  const id = wordId(w);
+  els.knownBtn.textContent = known.has(id) ? 'Known ✓' : 'Mark known';
+  const knownInFiltered = filtered.filter(x => known.has(wordId(x))).length;
+  const pct = filtered.length ? (knownInFiltered / filtered.length) * 100 : 0;
+  els.progressBar.style.width = `${pct}%`;
+}
+
+function next() { window.speechSynthesis?.cancel(); resetDictation(true); index++; showing = false; render(); }
+function prev() { window.speechSynthesis?.cancel(); resetDictation(true); index--; showing = false; render(); }
+function stopAuto() {
+  autoMode = false;
+  if (autoTimer) clearInterval(autoTimer);
+  autoTimer = null;
+  render();
+}
+function startAuto() {
+  if (!filtered.length) return;
+  autoMode = true;
+  showing = false;
+  if (autoTimer) clearInterval(autoTimer);
+  autoTimer = setInterval(() => {
+    index++;
+    showing = false;
+    render();
+  }, autoDelayMs);
+  render();
+}
+function toggleAuto() { autoMode ? stopAuto() : startAuto(); }
+function shuffle() {
+  for (let i = filtered.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+  }
+  index = 0;
+  showing = false;
+  resetDictation(true);
+  if (autoMode) startAuto();
+  render();
+}
+function toggleKnown() {
+  if (!filtered.length) return;
+  const id = wordId(filtered[index]);
+  if (known.has(id)) known.delete(id); else known.add(id);
+  localStorage.setItem(knownKey, JSON.stringify([...known]));
+  render();
+}
+
+els.speakBtn.addEventListener('click', () => speakCurrent(1));
+els.repeatBtn.addEventListener('click', () => speakCurrent(3));
+els.dictationBtn.addEventListener('click', () => startDictation());
+els.checkBtn.addEventListener('click', checkDictation);
+els.clearDictationBtn.addEventListener('click', () => resetDictation(true));
+els.dictationInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkDictation(); });
+els.showBtn.addEventListener('click', () => { showing = !showing; resetDictation(false); render(); });
+els.autoBtn.addEventListener('click', toggleAuto);
+els.nextBtn.addEventListener('click', () => { if (autoMode) stopAuto(); next(); });
+els.prevBtn.addEventListener('click', () => { if (autoMode) stopAuto(); prev(); });
+els.shuffleBtn.addEventListener('click', shuffle);
+els.knownBtn.addEventListener('click', toggleKnown);
+els.resetBtn.addEventListener('click', () => { known.clear(); localStorage.removeItem(knownKey); showing = false; resetDictation(true); render(); });
+els.search.addEventListener('input', applyFilters);
+els.category.addEventListener('change', applyFilters);
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') { e.preventDefault(); showing = !showing; render(); }
+  if (e.key === 'ArrowRight') { if (autoMode) stopAuto(); next(); }
+  if (e.key === 'ArrowLeft') { if (autoMode) stopAuto(); prev(); }
+  if (e.key.toLowerCase() === 'a') toggleAuto();
+  if (e.key.toLowerCase() === 's') shuffle();
+  if (e.key.toLowerCase() === 'd') startDictation();
+  if (e.key.toLowerCase() === 'p') speakCurrent(1);
+});
+
+setupCategories();
+render();
+</script>
+</body>
+</html>
